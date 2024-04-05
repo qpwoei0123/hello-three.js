@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>그냥 소화기</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        background-color: black;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="2000" height="2000"></canvas>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.141.0/build/three.module.js",
+          "GLTFLoader": "https://unpkg.com/three@0.141.0/examples/jsm/loaders/GLTFLoader.js",
+          "OrbitControls": "https://unpkg.com/three@0.141.0/examples/jsm/controls/OrbitControls.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "GLTFLoader";
+      import { OrbitControls } from "OrbitControls";
+
+      let scene = new THREE.Scene();
+      scene.background = new THREE.Color("black");
+      let light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(10, 10, 10);
+      scene.add(light);
+
+      let renderer = new THREE.WebGLRenderer({
+        canvas: document.getElementById("canvas"),
+        antialias: true,
+      });
+      renderer.outputEncoding = THREE.sRGBEncoding;
+
+      let camera = new THREE.PerspectiveCamera(40, 1);
+      camera.position.set(0, 0, 3);
+
+      let controls = new OrbitControls(camera, renderer.domElement);
+
+      let loader = new GLTFLoader();
+      loader.load("asset/korean_fire_extinguisher_01_4k.gltf", function (gltf) {
+        let model = gltf.scene;
+        scene.add(model);
+
+        function animate() {
+          requestAnimationFrame(animate);
+
+          model.rotation.y += 0.01;
+
+          controls.update();
+          renderer.render(scene, camera);
+        }
+        animate();
+      });
+    </script>
+  </body>
+</html>
