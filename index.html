@@ -7,6 +7,7 @@
     <style>
       body {
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         width: 100vw;
@@ -17,17 +18,24 @@
         font-family: Arial, sans-serif;
       }
       #loading {
-        position: absolute;
-        z-index: 10;
         font-size: 24px;
+        margin-bottom: 20px;
       }
       canvas {
         position: absolute;
+      }
+      #loadingTime {
+        position: fixed;
+        bottom: 10px;
+        left: 0px;
+        color: white;
+        z-index: 999;
       }
     </style>
   </head>
   <body>
     <div id="loading">모델 로딩 중...</div>
+    <div id="loadingTime"></div>
     <canvas id="canvas" width="1000" height="1000"></canvas>
     <script type="importmap">
       {
@@ -42,6 +50,9 @@
       import * as THREE from "three";
       import { GLTFLoader } from "GLTFLoader";
       import { OrbitControls } from "OrbitControls";
+
+      // 로딩 시작 시간 기록
+      let startTime = performance.now();
 
       let scene = new THREE.Scene();
       scene.background = new THREE.Color("black");
@@ -62,13 +73,21 @@
       let controls = new OrbitControls(camera, renderer.domElement);
 
       let loader = new GLTFLoader();
+
       loader.load(
         "asset/korean_fire_extinguisher_01_4k.gltf",
         function (gltf) {
           let model = gltf.scene;
           scene.add(model);
 
+          // 로딩 종료 시간 기록
+          let endTime = performance.now();
+          let loadTime = (endTime - startTime) / 1000; // 초 단위로 변환
+
           document.getElementById("loading").style.display = "none"; // 로딩 메시지를 숨김
+          document.getElementById(
+            "loadingTime"
+          ).innerText = `모델 로딩 시간: ${loadTime.toFixed(2)}초`;
 
           function animate() {
             requestAnimationFrame(animate);
