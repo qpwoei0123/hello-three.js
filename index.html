@@ -19,6 +19,22 @@
         color: white;
         font-family: 'Orbitron', monospace;
         overflow: hidden;
+        animation: backgroundPulse 10s ease-in-out infinite;
+      }
+      
+      @keyframes backgroundPulse {
+        0%, 100% { 
+          background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+        }
+        25% { 
+          background: radial-gradient(ellipse at center, #2e1a1a 0%, #3e1621 50%, #230f0f 100%);
+        }
+        50% { 
+          background: radial-gradient(ellipse at center, #1a2e1a 0%, #162136 50%, #0f230f 100%);
+        }
+        75% { 
+          background: radial-gradient(ellipse at center, #2e2e1a 0%, #363621 50%, #23230f 100%);
+        }
       }
       
       #loading {
@@ -65,6 +81,34 @@
         z-index: 999;
         text-shadow: 0 0 15px #ff6040, 0 0 30px #ff6040;
         letter-spacing: 3px;
+        animation: titleRainbow 8s ease-in-out infinite;
+      }
+      
+      @keyframes titleRainbow {
+        0% { 
+          color: #ff6040;
+          text-shadow: 0 0 15px #ff6040, 0 0 30px #ff6040;
+        }
+        20% { 
+          color: #ffff40;
+          text-shadow: 0 0 15px #ffff40, 0 0 30px #ffff40;
+        }
+        40% { 
+          color: #40ff40;
+          text-shadow: 0 0 15px #40ff40, 0 0 30px #40ff40;
+        }
+        60% { 
+          color: #4040ff;
+          text-shadow: 0 0 15px #4040ff, 0 0 30px #4040ff;
+        }
+        80% { 
+          color: #ff40ff;
+          text-shadow: 0 0 15px #ff40ff, 0 0 30px #ff40ff;
+        }
+        100% { 
+          color: #ff6040;
+          text-shadow: 0 0 15px #ff6040, 0 0 30px #ff6040;
+        }
       }
     </style>
   </head>
@@ -125,6 +169,15 @@
       const fillLight = new THREE.DirectionalLight(0xff6040, 0.4);
       fillLight.position.set(0, -5, 5);
       scene.add(fillLight);
+      
+      // 추가 색상 조명들
+      const accentLight1 = new THREE.PointLight(0xff00ff, 0.5, 10);
+      accentLight1.position.set(3, 3, 3);
+      scene.add(accentLight1);
+      
+      const accentLight2 = new THREE.PointLight(0x00ffff, 0.5, 10);
+      accentLight2.position.set(-3, -3, 3);
+      scene.add(accentLight2);
 
       let renderer = new THREE.WebGLRenderer({
         canvas: document.getElementById("canvas"),
@@ -139,18 +192,29 @@
       camera.lookAt(0, 0, 0);
 
       let controls = new OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.5;
+      controls.maxDistance = 10;
+      controls.minDistance = 2;
 
       let loader = new GLTFLoader();
 
-      // 파티클 시스템 추가
+      // 파티클 시스템 추가 - 다층 파티클
       const particleCount = 200;
       const particleGeometry = new THREE.BufferGeometry();
       const particlePositions = new Float32Array(particleCount * 3);
+      const particleVelocities = new Float32Array(particleCount * 3);
       
       for (let i = 0; i < particleCount * 3; i += 3) {
         particlePositions[i] = (Math.random() - 0.5) * 20;
         particlePositions[i + 1] = (Math.random() - 0.5) * 20;
         particlePositions[i + 2] = (Math.random() - 0.5) * 20;
+        
+        particleVelocities[i] = (Math.random() - 0.5) * 0.02;
+        particleVelocities[i + 1] = (Math.random() - 0.5) * 0.02;
+        particleVelocities[i + 2] = (Math.random() - 0.5) * 0.02;
       }
       
       particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
@@ -165,6 +229,33 @@
       
       const particles = new THREE.Points(particleGeometry, particleMaterial);
       scene.add(particles);
+      
+      // 추가 파티클 레이어
+      const sparkleGeometry = new THREE.BufferGeometry();
+      const sparklePositions = new Float32Array(50 * 3);
+      
+      for (let i = 0; i < 50 * 3; i += 3) {
+        const radius = 3 + Math.random() * 2;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        
+        sparklePositions[i] = radius * Math.sin(phi) * Math.cos(theta);
+        sparklePositions[i + 1] = radius * Math.cos(phi);
+        sparklePositions[i + 2] = radius * Math.sin(phi) * Math.sin(theta);
+      }
+      
+      sparkleGeometry.setAttribute('position', new THREE.BufferAttribute(sparklePositions, 3));
+      
+      const sparkleMaterial = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: 0.1,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+      });
+      
+      const sparkles = new THREE.Points(sparkleGeometry, sparkleMaterial);
+      scene.add(sparkles);
 
       let model = null;
       let time = 0;
@@ -202,15 +293,55 @@
               model.rotation.y = Math.sin(time * 0.5) * 0.3 + time * 0.2;
               model.position.y = Math.sin(time * 2) * 0.1;
               model.rotation.x = Math.sin(time * 0.3) * 0.05;
+              model.rotation.z = Math.sin(time * 0.7) * 0.02;
             }
             
-            // 파티클 애니메이션
+            // 다층 파티클 애니메이션
             particles.rotation.y = time * 0.1;
             particles.rotation.x = time * 0.05;
             
-            // 조명 애니메이션
+            sparkles.rotation.y = -time * 0.15;
+            sparkles.rotation.z = time * 0.08;
+            
+            // 동적 파티클 위치 업데이트
+            const positions = particleGeometry.attributes.position.array;
+            for (let i = 0; i < particleCount * 3; i += 3) {
+              positions[i] += particleVelocities[i];
+              positions[i + 1] += particleVelocities[i + 1];
+              positions[i + 2] += particleVelocities[i + 2];
+              
+              // 경계 체크 및 리셋
+              if (Math.abs(positions[i]) > 10) particleVelocities[i] *= -1;
+              if (Math.abs(positions[i + 1]) > 10) particleVelocities[i + 1] *= -1;
+              if (Math.abs(positions[i + 2]) > 10) particleVelocities[i + 2] *= -1;
+            }
+            particleGeometry.attributes.position.needsUpdate = true;
+            
+            // 동적 조명 색상 및 강도 변화
+            const hue1 = (time * 0.5) % 1;
+            const hue2 = (time * 0.3 + 0.5) % 1;
+            
+            accentLight1.color.setHSL(hue1, 1, 0.5);
+            accentLight2.color.setHSL(hue2, 1, 0.5);
+            
+            accentLight1.intensity = 0.5 + Math.sin(time * 4) * 0.3;
+            accentLight2.intensity = 0.5 + Math.cos(time * 3) * 0.3;
+            
             rimLight.intensity = 0.8 + Math.sin(time * 3) * 0.2;
             fillLight.intensity = 0.4 + Math.sin(time * 2) * 0.1;
+            
+            // 포인트 라이트 위치 애니메이션
+            accentLight1.position.x = 3 * Math.sin(time * 0.8);
+            accentLight1.position.z = 3 * Math.cos(time * 0.8);
+            
+            accentLight2.position.x = -3 * Math.cos(time * 0.6);
+            accentLight2.position.z = 3 * Math.sin(time * 0.6);
+            
+            // 시네마틱 카메라 효과 (사용자 제어와 독립적)
+            const cameraRadius = 0.1;
+            const originalPosition = camera.position.clone();
+            camera.position.x += Math.sin(time * 1.5) * cameraRadius;
+            camera.position.y += Math.cos(time * 2) * cameraRadius * 0.5;
             
             controls.update();
             renderer.render(scene, camera);
